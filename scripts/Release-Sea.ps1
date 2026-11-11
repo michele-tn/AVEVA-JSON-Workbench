@@ -52,11 +52,15 @@ $stagedArchive = Join-Path $staging $archiveName
 $stagedGuide = Join-Path $staging $guideName
 $stagedChecksum = "$stagedArchive.sha3-256"
 $stagedScreenshots = Join-Path $staging 'docs'
+$stagedScripts = Join-Path $staging 'scripts'
+$lanLauncher = 'Start-WorkbenchLan.ps1'
 $screenshots = 'workbench.png', 'output-dialog.png'
 
 try {
     Copy-Item -LiteralPath $Executable -Destination $stagedExe
     Copy-Item -LiteralPath $guide -Destination $stagedGuide
+    New-Item -ItemType Directory -Path $stagedScripts | Out-Null
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot $lanLauncher) -Destination $stagedScripts
     New-Item -ItemType Directory -Path $stagedScreenshots | Out-Null
     foreach ($screenshot in $screenshots) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot "../docs/$screenshot") -Destination $stagedScreenshots
@@ -71,7 +75,7 @@ try {
     Push-Location -LiteralPath $staging
     try {
         & $SevenZipPath a -t7z -mx=9 '-m0=LZMA2:d=256m:fb=273' -ms=on -mmt=2 `
-            $archiveName $binaryName $certificateName $guideName 'docs/workbench.png' 'docs/output-dialog.png'
+            $archiveName $binaryName $certificateName $guideName 'docs/workbench.png' 'docs/output-dialog.png' "scripts/$lanLauncher"
         if ($LASTEXITCODE -ne 0) { throw '7-Zip could not create the release archive.' }
         & $SevenZipPath t $archiveName
         if ($LASTEXITCODE -ne 0) { throw '7-Zip could not verify the release archive.' }
@@ -91,6 +95,9 @@ try {
     Move-Item -LiteralPath $stagedArchive -Destination (Join-Path $releaseDir $archiveName) -Force
     Move-Item -LiteralPath $stagedChecksum -Destination (Join-Path $releaseDir "$archiveName.sha3-256") -Force
     Move-Item -LiteralPath $stagedGuide -Destination (Join-Path $releaseDir $guideName) -Force
+    $releaseScripts = Join-Path $releaseDir 'scripts'
+    New-Item -ItemType Directory -Path $releaseScripts -Force | Out-Null
+    Move-Item -LiteralPath (Join-Path $stagedScripts $lanLauncher) -Destination $releaseScripts -Force
     $releaseScreenshots = Join-Path $releaseDir 'docs'
     New-Item -ItemType Directory -Path $releaseScreenshots -Force | Out-Null
     foreach ($screenshot in $screenshots) {
@@ -109,6 +116,11 @@ try {
             if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
         }
         Remove-Item -LiteralPath $stagedScreenshots
+    }
+    if (Test-Path -LiteralPath $stagedScripts) {
+        $file = Join-Path $stagedScripts $lanLauncher
+        if (Test-Path -LiteralPath $file) { Remove-Item -LiteralPath $file -Force }
+        Remove-Item -LiteralPath $stagedScripts
     }
     Remove-Item -LiteralPath $staging
 }

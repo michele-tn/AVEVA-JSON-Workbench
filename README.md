@@ -97,6 +97,18 @@ Launch the executable to open the workbench at [http://127.0.0.1:8787](http://12
 
 Use `--port 8788` to select a different port or `--no-open` to start the local server without opening a browser. Press **Ctrl+C** in the console to stop it.
 
+### Access from the local network
+
+Open PowerShell 7 in the extracted release or repository folder. Stop any Workbench instance already using port 8787, then run the [LAN launcher](./scripts/Start-WorkbenchLan.ps1).
+
+```powershell
+pwsh -NoProfile -File .\scripts\Start-WorkbenchLan.ps1
+```
+
+The launcher downloads the latest official Caddy release, verifies its SHA-256, and starts both processes. Open the printed LAN URL from a device on the same subnet. Approve the Windows firewall prompt if it appears. The rule applies to Private and Domain profiles and stays available for later launches. Press **Ctrl+C** to stop both processes.
+
+Use `-LanAddress` to select the host IPv4 address, `-Port 8788` to use another port, or `-WorkbenchPath` to point to an extracted executable. On a managed network, use `-SkipFirewall` once the administrator has allowed the port. LAN access uses HTTP without authentication. Use it on a trusted network.
+
 The release script creates or reuses a self-signed Authenticode certificate in the current user's Personal store. The archive includes the public certificate. Windows does not trust a self-signed publisher by default. Verify the fingerprint out of band before trusting a certificate.
 
 Open the generated guide in `dist/sea` to download the local archive and checksum. The hosted guide downloads both files from the `Release-assets` folder in this repository.
