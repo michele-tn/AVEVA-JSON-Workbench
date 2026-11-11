@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark light">
-<meta name="release-checksum" content="646067900e929a08787c83fb9cad42e69d68c5fe310f73e0d342c93e0a47e0c8">
+<meta name="release-checksum" content="">
 <title>AVEVA JSON Workbench · Installation &amp; User Guide</title>
 <style>
   :root {
@@ -206,6 +206,11 @@
   <section id="install">
     <p class="label">01 / Setup</p>
     <h2>Choose how to run the app</h2>
+    <div class="grid" aria-label="Launch modes">
+      <article class="card"><h3>Local executable</h3><p>Use the packaged Workbench on this Windows PC. The browser opens at <code>127.0.0.1:8787</code>.</p></article>
+      <article class="card"><h3>Direct LAN</h3><p>Start the executable with <code>--lan</code> to keep local access and serve the selected LAN interface on the same port.</p></article>
+      <article class="card"><h3>LAN through Caddy</h3><p>Use the PowerShell 7 launcher to start both processes and set up the scoped Windows firewall rule.</p></article>
+    </div>
     <div class="switch" role="group" aria-label="Installation method">
       <button type="button" data-install="portable" aria-pressed="true">Windows executable</button>
       <button type="button" data-install="source" aria-pressed="false">From source</button>
@@ -231,12 +236,24 @@
       <div class="code-block"><div class="code-tools"><span>PowerShell · alternate port</span><button type="button" data-copy="port-command">Copy</button></div>
         <pre id="port-command" tabindex="0"><code>.\AVEVA-JSON-Workbench-win-x64.exe --port 8788</code></pre>
       </div>
+      <p>Use <code>--no-open</code> to start the server without opening a browser. This option works with either local or direct LAN mode. Use <code>--help</code> to list the executable’s options.</p>
       <h3 id="lan">Open the workbench on another device</h3>
-      <p>On the Windows host, open PowerShell 7 in the extracted release or repository folder. Close any Workbench instance already using port 8787, then run the LAN launcher.</p>
+      <p>On the Windows host, close any Workbench instance already using port 8787. Open PowerShell in the extracted release folder and start the executable in LAN mode.</p>
+      <div class="code-block"><div class="code-tools"><span>PowerShell · direct LAN mode</span><button type="button" data-copy="lan-native-command">Copy</button></div>
+        <pre id="lan-native-command" tabindex="0"><code>.\AVEVA-JSON-Workbench-win-x64.exe --lan</code></pre>
+      </div>
+      <p>Open the printed LAN URL on a device on the same subnet. With multiple interfaces, the executable lists the available addresses. Use <code>ipconfig</code> to identify your Ethernet or Wi-Fi IPv4 address, then pass it as <code>--lan-address</code>.</p>
+      <div class="code-block"><div class="code-tools"><span>PowerShell · choose an interface and port</span><button type="button" data-copy="lan-address-command">Copy</button></div>
+        <pre id="lan-address-command" tabindex="0"><code>.\AVEVA-JSON-Workbench-win-x64.exe --lan-address 192.168.1.50 --port 8788 --no-open</code></pre>
+      </div>
+      <p>Replace <code>192.168.1.50</code> with the host’s address. Use the printed port when opening the URL from another device. If Windows prompts for access, choose your trusted network profile. On a managed network, ask the administrator to allow inbound TCP on the selected port.</p>
+      <h4>Start through Caddy</h4>
+      <p>To let the launcher handle the firewall setup, run it from PowerShell 7 in the extracted release or repository folder.</p>
       <div class="code-block"><div class="code-tools"><span>PowerShell · start LAN access</span><button type="button" data-copy="lan-command">Copy</button></div>
         <pre id="lan-command" tabindex="0"><code>pwsh -NoProfile -File .\scripts\Start-WorkbenchLan.ps1</code></pre>
       </div>
-      <p>The launcher downloads and verifies the latest official Caddy release, starts the Workbench, and prints the LAN URL. Open that URL on another device on the same subnet. If Windows prompts for administrator approval, approve the firewall rule for the Private or Domain network profile.</p>
+      <p>The launcher requires internet access to download and verify the latest official Caddy release. It starts the Workbench on loopback and Caddy on the chosen LAN IPv4 address, then prints both URLs. If Windows prompts for administrator approval, approve the firewall rule for the Private or Domain network profile. The rule remains available for later runs.</p>
+      <p>Use <code>-LanAddress</code> to pick the interface, <code>-Port</code> to change the port, or <code>-WorkbenchPath</code> to point to an extracted executable. On a managed network, use <code>-SkipFirewall</code> after an administrator has allowed the port.</p>
       <p>Keep the launcher open. <strong>Ctrl+C</strong> stops both processes. LAN access uses HTTP without authentication. Use it on a trusted network.</p>
       <a class="button" href="./scripts/Start-WorkbenchLan.ps1" download>Download the LAN launcher</a>
     </div>
@@ -248,6 +265,7 @@
 pnpm dev:www</code></pre>
       </div>
       <p>Open <a href="http://localhost:3000/">http://localhost:3000/</a>. Keep the terminal open. The first visit may take longer while Next.js compiles.</p>
+      <p>This development mode is for working on the source. For distributing the packaged Windows app on a LAN, use the executable or Caddy steps in the Windows tab.</p>
       <p>To rebuild the signed Windows package, use the official Windows Node.js 24.8 or later distribution, install Windows SDK Signing Tools and 7-Zip, then run <code>pnpm release:sea</code>.</p>
     </div>
     <p id="copy-status" class="status" role="status" aria-live="polite"></p>
@@ -255,6 +273,7 @@ pnpm dev:www</code></pre>
   <section id="workflow">
     <p class="label">02 / Daily use</p>
     <h2>Paste, edit, and return</h2>
+    <p>To generate code from the current editor contents, open <strong>Tools → Generate Type</strong>, choose an output language, and select <strong>Copy code</strong>. Use <strong>Wrap lines</strong> to fit long lines in the preview. If the clipboard is unavailable, the dialog selects the code so you can copy it manually.</p>
     <div class="grid">
       <article class="card"><p class="label">Import</p><h3>Paste the source value</h3><p>Paste into <strong>AVEVA Wonderware JSON</strong> or select <strong>Load example</strong>. The workbench decodes the outer quotes and doubled internal quotes. Invalid input leaves the previous document available.</p></article>
       <article class="card"><p class="label">Explore</p><h3>Edit and inspect</h3><p>In <strong>Graph</strong> view, hover over a node to preview its JSON in the left editor. Click a node to select that text, or use <strong>Node details</strong> to inspect it. On a narrow screen, switch to <strong>Source &amp; editor</strong> to see the selection.</p></article>
@@ -265,7 +284,7 @@ pnpm dev:www</code></pre>
   <section id="screens">
     <p class="label">03 / Visual tour</p>
     <h2>What the app looks like</h2>
-    <p class="muted">These screens show the same document as it moves from the editor to the Wonderware output.</p>
+    <p class="muted">See the editor, the Wonderware output, and generated types.</p>
     <div class="screens">
       <figure class="card shot-card">
         <a class="shot-link" href="./docs/workbench.png" data-screenshot="Editor and graph" aria-label="Enlarge editor and graph screenshot">
@@ -280,6 +299,13 @@ pnpm dev:www</code></pre>
           <span aria-hidden="true">Enlarge ↗</span>
         </a>
         <figcaption><strong>AVEVA output dialog</strong>Select <strong>Generate AVEVA output</strong>, then use the copy button in the dialog.</figcaption>
+      </figure>
+      <figure class="card shot-card">
+        <a class="shot-link" href="./docs/type-generation.png" data-screenshot="Generate Types dialog" aria-label="Enlarge Generate Types dialog screenshot">
+          <img src="./docs/type-generation.png" width="1440" height="900" loading="lazy" alt="Generate Types dialog showing Kotlin code with controls to wrap and copy lines">
+          <span aria-hidden="true">Enlarge ↗</span>
+        </a>
+        <figcaption><strong>Generate Types</strong>Choose an output language and review the generated code before copying it.</figcaption>
       </figure>
     </div>
   </section>
@@ -333,12 +359,16 @@ pnpm dev:www</code></pre>
 <script>
   if (location.protocol === "file:") {
     const digest = document.querySelector('meta[name="release-checksum"]').content;
+    const [archive, checksum] = document.querySelectorAll("[data-release-file]");
     if (/^[a-f0-9]{64}$/.test(digest)) {
-      const [archive, checksum] = document.querySelectorAll("[data-release-file]");
       archive.href = "./" + archive.dataset.releaseFile;
       const checksumText = digest + "  " + archive.dataset.releaseFile + "\n";
       checksum.href = "data:text/plain;charset=utf-8," + encodeURIComponent(checksumText);
       checksum.download = checksum.dataset.releaseFile;
+    } else {
+      const releaseBase = "https://michele-tn.github.io/AVEVA-JSON-Workbench/Release-assets/";
+      archive.href = releaseBase + archive.dataset.releaseFile;
+      checksum.href = releaseBase + checksum.dataset.releaseFile;
     }
   }
 

@@ -45,6 +45,7 @@ const LiveEditor = dynamic(() => import("../features/editor/LiveEditor"), { ssr:
 
 const EditorPage = () => {
   const { query, isReady } = useRouter();
+  const jsonUrl = typeof query.json === "string" ? query.json : undefined;
   const { setColorScheme } = useMantineColorScheme();
   const checkEditorSession = useFile(state => state.checkEditorSession);
   const darkmodeEnabled = useConfig(state => state.darkmodeEnabled);
@@ -58,8 +59,8 @@ const EditorPage = () => {
   const previewVisible = !compact || mobilePanel === "preview";
 
   useEffect(() => {
-    if (isReady) checkEditorSession(query?.json);
-  }, [checkEditorSession, isReady, query]);
+    if (isReady) checkEditorSession(jsonUrl);
+  }, [checkEditorSession, isReady, jsonUrl]);
 
   useEffect(() => {
     setColorScheme(darkmodeEnabled ? "dark" : "light");

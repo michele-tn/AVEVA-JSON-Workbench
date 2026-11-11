@@ -6,7 +6,7 @@ The interface starts in dark mode and remembers a theme change. On desktop, drag
 
 ![Dark workbench with a Wonderware value, its normalized JSON, and an interactive graph](./docs/workbench.png)
 
-[Open the interactive installation and user guide](./installation-and-user-guide.html)
+[Open the interactive installation and user guide](https://michele-tn.github.io/AVEVA-JSON-Workbench/)
 
 ## Quick start
 
@@ -99,7 +99,15 @@ Use `--port 8788` to select a different port or `--no-open` to start the local s
 
 ### Access from the local network
 
-Open PowerShell 7 in the extracted release or repository folder. Stop any Workbench instance already using port 8787, then run the [LAN launcher](./scripts/Start-WorkbenchLan.ps1).
+Stop any Workbench instance already using port 8787. From the extracted release folder, run the executable with LAN access enabled.
+
+```powershell
+.\AVEVA-JSON-Workbench-win-x64.exe --lan
+```
+
+The executable keeps the local URL available and prints a second URL for devices on the same subnet. If more than one interface is available, pass `--lan-address` followed by the LAN IPv4 address. Allow the executable through Windows Firewall on your trusted network profile if prompted.
+
+For automatic firewall setup through Caddy, run the [LAN launcher](./scripts/Start-WorkbenchLan.ps1) from PowerShell 7 in the extracted release or repository folder.
 
 ```powershell
 pwsh -NoProfile -File .\scripts\Start-WorkbenchLan.ps1

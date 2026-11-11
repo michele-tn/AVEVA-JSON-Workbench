@@ -16,7 +16,7 @@ $releaseDir = Split-Path -Parent $Executable
 $binaryName = Split-Path -Leaf $Executable
 $archiveName = [IO.Path]::GetFileNameWithoutExtension($binaryName) + '.7z'
 $certificateName = 'AVEVA-JSON-Workbench-Signing.cer'
-$guideName = 'installation-and-user-guide.html'
+$guideName = 'index.html'
 $guide = Join-Path $PSScriptRoot "../$guideName"
 
 if (!$SevenZipPath) {
@@ -54,7 +54,8 @@ $stagedChecksum = "$stagedArchive.sha3-256"
 $stagedScreenshots = Join-Path $staging 'docs'
 $stagedScripts = Join-Path $staging 'scripts'
 $lanLauncher = 'Start-WorkbenchLan.ps1'
-$screenshots = 'workbench.png', 'output-dialog.png'
+$screenshots = 'workbench.png', 'output-dialog.png', 'type-generation.png'
+$archiveScreenshots = $screenshots | ForEach-Object { "docs/$_" }
 
 try {
     Copy-Item -LiteralPath $Executable -Destination $stagedExe
@@ -75,7 +76,7 @@ try {
     Push-Location -LiteralPath $staging
     try {
         & $SevenZipPath a -t7z -mx=9 '-m0=LZMA2:d=256m:fb=273' -ms=on -mmt=2 `
-            $archiveName $binaryName $certificateName $guideName 'docs/workbench.png' 'docs/output-dialog.png' "scripts/$lanLauncher"
+            $archiveName $binaryName $certificateName $guideName @archiveScreenshots "scripts/$lanLauncher"
         if ($LASTEXITCODE -ne 0) { throw '7-Zip could not create the release archive.' }
         & $SevenZipPath t $archiveName
         if ($LASTEXITCODE -ne 0) { throw '7-Zip could not verify the release archive.' }
