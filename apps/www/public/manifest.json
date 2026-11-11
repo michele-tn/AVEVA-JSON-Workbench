@@ -1,0 +1,23 @@
+{
+  "name": "AVEVA JSON Workbench",
+  "short_name": "JSON Workbench",
+  "description": "Normalize and explore AVEVA Wonderware JSON with an interactive graph, tree, and editor.",
+  "theme_color": "#101c33",
+  "background_color": "#0a101d",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "assets/192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+
+    {
+      "src": "assets/512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
