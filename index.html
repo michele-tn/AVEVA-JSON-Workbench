@@ -247,6 +247,21 @@
         <pre id="lan-address-command" tabindex="0"><code>.\AVEVA-JSON-Workbench-win-x64.exe --lan-address 192.168.1.50 --port 8788 --no-open</code></pre>
       </div>
       <p>Replace <code>192.168.1.50</code> with the host’s address. Use the printed port when opening the URL from another device. If Windows prompts for access, choose your trusted network profile. On a managed network, ask the administrator to allow inbound TCP on the selected port.</p>
+      <h4 id="routed-lan">Allow a second routed subnet</h4>
+      <p>On the server, check the IPv4 address and prefix length of the LAN adapter with <code>Get-NetIPAddress -AddressFamily IPv4</code>. The executable automatically allows that interface’s subnet. Add <code>--allow-subnet</code> for each additional IPv4 subnet you want to authorize.</p>
+      <div class="code-block"><div class="code-tools"><span>PowerShell · allow another subnet</span><button type="button" data-copy="lan-subnet-command">Copy</button></div>
+        <pre id="lan-subnet-command" tabindex="0"><code>.\AVEVA-JSON-Workbench-win-x64.exe --lan-address 192.168.1.50 --allow-subnet 192.168.2.0/24</code></pre>
+      </div>
+      <p>In this example, the server uses <code>192.168.1.50/24</code>. Clients on both <code>192.168.1.0/24</code> and <code>192.168.2.0/24</code> open the same URL, <code>http://192.168.1.50:8787/</code>. The executable prints its allowed networks at startup. Replace the example addresses with your own.</p>
+      <p>If Windows Firewall blocks inbound TCP, ask the server administrator to allow the selected port for both subnets. This example applies to Private and Domain network profiles and limits the rule to the server’s LAN address and the two source ranges.</p>
+      <div class="code-block"><div class="code-tools"><span>PowerShell as administrator · scope the firewall rule</span><button type="button" data-copy="lan-firewall-command">Copy</button></div>
+        <pre id="lan-firewall-command" tabindex="0"><code>New-NetFirewallRule -DisplayName 'AVEVA Workbench LAN' -Direction Inbound -Action Allow -Protocol TCP -LocalAddress 192.168.1.50 -LocalPort 8787 -RemoteAddress '192.168.1.0/24','192.168.2.0/24' -Profile Private,Domain</code></pre>
+      </div>
+      <p>From a client on each subnet, test TCP and then make a direct HTTP request. An HTTP 200 confirms access. An HTTP 403 from the Workbench means the HTTP request arrived and was rejected by the application’s host or source-address check. If TCP fails, check routing, firewall rules and the server listener.</p>
+      <div class="code-block"><div class="code-tools"><span>PowerShell · verify from a client</span><button type="button" data-copy="lan-client-command">Copy</button></div>
+        <pre id="lan-client-command" tabindex="0"><code>Test-NetConnection 192.168.1.50 -Port 8787
+curl.exe --noproxy "*" -sS -D - -o NUL http://192.168.1.50:8787/</code></pre>
+      </div>
       <h4>Start through Caddy</h4>
       <p>To let the launcher handle the firewall setup, run it from PowerShell 7 in the extracted release or repository folder.</p>
       <div class="code-block"><div class="code-tools"><span>PowerShell · start LAN access</span><button type="button" data-copy="lan-command">Copy</button></div>
@@ -254,6 +269,7 @@
       </div>
       <p>The launcher requires internet access to download and verify the latest official Caddy release. It starts the Workbench on loopback and Caddy on the chosen LAN IPv4 address, then prints both URLs. If Windows prompts for administrator approval, approve the firewall rule for the Private or Domain network profile. The rule remains available for later runs.</p>
       <p>Use <code>-LanAddress</code> to pick the interface, <code>-Port</code> to change the port, or <code>-WorkbenchPath</code> to point to an extracted executable. On a managed network, use <code>-SkipFirewall</code> after an administrator has allowed the port.</p>
+      <p>For routed clients using Caddy, use <code>-SkipFirewall</code> with a firewall rule scoped to both source subnets as shown above. The launcher’s automatic rule covers the local subnet.</p>
       <p>Keep the launcher open. <strong>Ctrl+C</strong> stops both processes. LAN access uses HTTP without authentication. Use it on a trusted network.</p>
       <a class="button" href="./scripts/Start-WorkbenchLan.ps1" download>Download the LAN launcher</a>
     </div>
@@ -336,7 +352,7 @@ pnpm dev:www</code></pre>
     <details><summary>Windows shows an untrusted publisher</summary><p>The release uses a self-signed Authenticode certificate. A default Windows installation does not trust that publisher. Inspect the EXE signature and compare the certificate thumbprint against a value supplied through a trusted channel before making a trust decision.</p><div class="code-block"><div class="code-tools"><span>PowerShell · inspect the signer</span><button type="button" data-copy="signer-command">Copy</button></div><pre id="signer-command" tabindex="0"><code>Get-AuthenticodeSignature -LiteralPath .\AVEVA-JSON-Workbench-win-x64.exe |
   Select-Object Status, StatusMessage, SignerCertificate</code></pre></div><p>The archive includes the public <code>.cer</code> certificate.</p></details>
     <details><summary>The workbench does not open</summary><p>Check the console for its URL. If port 8787 is in use, run the alternate-port command above and open <a href="http://127.0.0.1:8788/">http://127.0.0.1:8788/</a>. If Windows reports a different error, inspect that error before retrying.</p></details>
-    <details><summary>Another device cannot open the LAN URL</summary><p>Use the LAN URL shown by the launcher and confirm both devices are on the same subnet. If the host has multiple network adapters, pass <code>-LanAddress</code> with the host’s LAN IPv4 address. On a managed network, ask the administrator to allow the port and run with <code>-SkipFirewall</code> to use the existing firewall policy.</p></details>
+    <details><summary>Another device cannot open the LAN URL</summary><p>Use the LAN URL shown at startup. For direct LAN mode, an HTTP 403 can mean the client is outside the allowed subnets. Check its source IP and use <code>--allow-subnet</code> for the intended routed subnet. For Caddy, use <code>-LanAddress</code> to choose the host interface. On a managed network, use <code>-SkipFirewall</code> after the administrator has allowed the port.</p></details>
     <details><summary>Output generation reports invalid JSON</summary><p>Use the JSON format in the editor and correct syntax errors. Output generation accepts a JSON object or array. After editing, generate again to get the current value.</p></details>
     <details><summary>The graph exceeds its node limit</summary><p>Switch to <strong>Tree</strong> to continue inspecting the data, or reduce the document size. You can still edit and export the document.</p></details>
     <details><summary>How do I verify the archive checksum?</summary><p>Run the command below from the download folder if Node.js is installed. Compare its output with the first field in the <code>.sha3-256</code> file. If the values differ, download both files again from the same release.</p>

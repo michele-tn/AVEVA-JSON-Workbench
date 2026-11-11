@@ -78,12 +78,13 @@ async function main() {
       "no-open": { type: "boolean" },
       lan: { type: "boolean" },
       "lan-address": { type: "string" },
+      "allow-subnet": { type: "string", multiple: true, default: [] },
       port: { type: "string", default: "8787" },
     },
   });
 
   if (values.help) {
-    console.log("AVEVA JSON Workbench\nUsage: AVEVA-JSON-Workbench.exe [--port 8787] [--no-open] [--lan] [--lan-address IPv4]");
+    console.log("AVEVA JSON Workbench\nUsage: AVEVA-JSON-Workbench.exe [--port 8787] [--no-open] [--lan | --lan-address IPv4] [--allow-subnet IPv4/CIDR]...");
     return;
   }
 
@@ -95,8 +96,18 @@ async function main() {
   const lan = values.lan || values["lan-address"]
     ? selectLanInterface(values["lan-address"])
     : undefined;
-  const subnet = new BlockList();
-  if (lan) subnet.addSubnet(lan.address, Number(lan.cidr.split("/")[1]), "ipv4");
+  const extraSubnets = values["allow-subnet"];
+  if (extraSubnets.length && !lan) {
+    throw new Error("--allow-subnet requires --lan or --lan-address.");
+  }
+  const allowedClients = new BlockList();
+  for (const cidr of lan ? [lan.cidr, ...extraSubnets] : []) {
+    const match = /^([^/]+)\/([1-9]|[12]\d|3[0-2])$/.exec(cidr);
+    if (!match || !isIPv4(match[1])) {
+      throw new Error(`Invalid IPv4 subnet "${cidr}". Use IPv4/prefix with a prefix from 1 to 32.`);
+    }
+    allowedClients.addSubnet(match[1], Number(match[2]), "ipv4");
+  }
   const assets = new Set(getAssetKeys());
   const serve = (request, response) => {
     response.setHeader("X-Content-Type-Options", "nosniff");
@@ -105,7 +116,7 @@ async function main() {
     const allowedHosts = local === "127.0.0.1" ? [local, "localhost"] : [lan?.address];
     const validHost = allowedHosts.some(name => name && (host === `${name}:${port}` || (port === 80 && host === name)));
     const remote = request.socket.remoteAddress;
-    if (!validHost || (local !== "127.0.0.1" && (!remote || !isIPv4(remote) || !subnet.check(remote)))) {
+    if (!validHost || (local !== "127.0.0.1" && (!remote || !isIPv4(remote) || !allowedClients.check(remote)))) {
       response.writeHead(403).end();
       return;
     }
@@ -148,7 +159,7 @@ async function main() {
 
   const url = `http://127.0.0.1:${port}/`;
   console.log(`AVEVA JSON Workbench is running at ${url}`);
-  if (lan) console.log(`LAN: http://${lan.address}:${port}/ (HTTP, local subnet only)`);
+  if (lan) console.log(`LAN: http://${lan.address}:${port}/ (HTTP; allowed: ${[lan.cidr, ...extraSubnets].join(", ")})`);
   console.log("Press Ctrl+C to stop.");
   if (!values["no-open"]) openBrowser(url);
 }

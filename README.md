@@ -107,6 +107,14 @@ Stop any Workbench instance already using port 8787. From the extracted release 
 
 The executable keeps the local URL available and prints a second URL for devices on the same subnet. If more than one interface is available, pass `--lan-address` followed by the LAN IPv4 address. Allow the executable through Windows Firewall on your trusted network profile if prompted.
 
+To allow a second routed subnet, add `--allow-subnet` with its IPv4 CIDR. For example, if the host is `192.168.1.50/24`, this command serves both `192.168.1.0/24` and `192.168.2.0/24`.
+
+```powershell
+.\AVEVA-JSON-Workbench-win-x64.exe --lan-address 192.168.1.50 --allow-subnet 192.168.2.0/24
+```
+
+Repeat the option for each additional subnet. Clients still open the URL printed for the host's LAN interface. Routing and the Windows firewall must allow TCP traffic to that address and port. See the [two-subnet setup and checks](https://michele-tn.github.io/AVEVA-JSON-Workbench/#routed-lan) for a scoped firewall rule and client tests.
+
 For automatic firewall setup through Caddy, run the [LAN launcher](./scripts/Start-WorkbenchLan.ps1) from PowerShell 7 in the extracted release or repository folder.
 
 ```powershell
